@@ -51,7 +51,9 @@ class LinearClassifier(object):
       # Hint: Use np.random.choice to generate indices. Sampling with         #
       # replacement is faster than sampling without replacement.              #
       #########################################################################
-      pass
+      batch_index = np.random.choice(num_train, batch_size)
+      X_batch = X[batch_index, :]
+      y_batch = y[batch_index]
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -65,7 +67,7 @@ class LinearClassifier(object):
       # TODO:                                                                 #
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
-      pass
+      self.W -= learning_rate * grad
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -94,7 +96,8 @@ class LinearClassifier(object):
     # TODO:                                                                   #
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
-    pass
+    score = np.dot(X, self.W)
+    y_pred = np.argmax(score, axis = 1)
     ###########################################################################
     #                           END OF YOUR CODE                              #
     ###########################################################################
@@ -115,7 +118,25 @@ class LinearClassifier(object):
     - loss as a single float
     - gradient with respect to self.W; an array of the same shape as W
     """
-    pass
+    loss = 0.0
+    train_num = X_batch.shape[0]
+    score = np.dot(X_batch, self.W)
+    real_score = np.reshape(score[np.arange(train_num), y], (train_num, -1))
+    score = score - real_score + 1.0
+    score[np.arange(train_num), y] = 0.0
+    score[score < 0] = 0.0 
+    loss += np.sum(score) / train_num
+    loss += reg * np.sum(W * W)
+    
+    dW = np.zeros(self.W.shape)
+    score_mask = np.zeros(score.shape)
+    score_mask[score > 0] = 1
+    y_sum = np.sum(score_mask, axis = 1)
+    score_mask[np.range(train_num), y] -= y_sum
+    dW = np.dot(X_batch.T, score_mask) / train_num
+    dW += dW * reg
+    
+    return loss, dW
 
 
 class LinearSVM(LinearClassifier):
